@@ -57,7 +57,7 @@ function App() {
   return (
     <div className="min-h-screen bg-slate-950 text-white">
       <div className="flex items-center justify-between p-4 border-b border-slate-800">
-        <h1 className="text-2xl font-bold text-purple-400">🕵️ Spy & Duel</h1>
+        <h1 className="text-2xl font-bold text-purple-400">🕵️ Spyyy</h1>
         <div className="flex items-center gap-4">
           <span className={`text-sm ${isConnected ? 'text-green-400' : 'text-red-400'}`}>
             {isConnected ? '🟢 Connected' : '🔴 Disconnected'}

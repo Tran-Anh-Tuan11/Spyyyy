@@ -21,6 +21,7 @@ export class RoomService {
       wordMode,
       spyCount,
       dânCount,
+      discussionTime: 3,
       descriptions: new Map(),
       votes: new Map(),
       createdAt: new Date(),
@@ -270,6 +271,34 @@ export class RoomService {
       }
     }
   }
-}
 
-export const roomService = new RoomService();
+  updateConfig(
+    roomId: string,
+    updates: { spyCount?: number; dânCount?: number; discussionTime?: number }
+  ): { success: boolean; room?: Room; error?: string } {
+    const room = this.rooms.get(roomId);
+    if (!room) return { success: false, error: "Phòng không tồn tại" };
+
+    if (room.status !== "lobby") {
+      return { success: false, error: "Chỉ có thể cập nhật cấu hình khi đang ở lobby" };
+    }
+
+    const newSpyCount = updates.spyCount ?? room.spyCount;
+    const newDânCount = updates.dânCount ?? room.dânCount;
+    const totalNeeded = newSpyCount + newDânCount;
+
+    if (totalNeeded < 2) {
+      return { success: false, error: "Cần ít nhất 2 người chơi (1 Spy + 1 Dân)" };
+    }
+
+    if (room.players.length > totalNeeded) {
+      return { success: false, error: `Số người hiện tại (${room.players.length}) vượt quá cấu hình mới (${totalNeeded})` };
+    }
+
+    if (updates.spyCount !== undefined) room.spyCount = newSpyCount;
+    if (updates.dânCount !== undefined) room.dânCount = newDânCount;
+    if (updates.discussionTime !== undefined) room.discussionTime = Math.max(1, updates.discussionTime);
+
+    return { success: true, room };
+  }
+}

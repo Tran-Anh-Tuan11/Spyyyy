@@ -19,9 +19,22 @@ export default function Room({ socket }: RoomProps) {
 
   const isHost = playerId === room?.hostId;
   const roomUrl = `${window.location.origin}?code=${room?.code}`;
+  
+  // Tính tổng người cần thiết:
+  // - Manual mode: Host KHÔNG tính là người chơi, chỉ là host → totalPlayers = spy + dân
+  // - Random mode: Host tính là người chơi → totalPlayers = spy + dân (host nằm trong số này)
   const totalPlayersNeeded = (room?.spyCount || 0) + (room?.dânCount || 0);
   const currentPlayers = room?.players.length || 0;
-  const canStartGame = currentPlayers >= totalPlayersNeeded;
+  
+  // Kiểm tra xem đủ người để bắt đầu
+  let canStartGame = false;
+  if (room?.wordMode === 'manual') {
+    // Manual: cần đủ số người + host (host không tính vào spy/dân)
+    canStartGame = currentPlayers > totalPlayersNeeded; // currentPlayers = spy + dân + host
+  } else {
+    // Random: host tính là người chơi
+    canStartGame = currentPlayers >= totalPlayersNeeded;
+  }
 
   useEffect(() => {
     if (room?.code) {
@@ -74,6 +87,11 @@ export default function Room({ socket }: RoomProps) {
       if (!response.success) {
         console.error('[Room] Lỗi cập nhật config:', response.error);
         alert(response.error || 'Lỗi cập nhật cấu hình');
+      } else {
+        // Reset local state sau khi cập nhật thành công
+        if (newSpyCount !== undefined) setSpyCount(null);
+        if (newDânCount !== undefined) setDânCount(null);
+        if (newDiscussionTime !== undefined) setDiscussionTime(null);
       }
     });
   };
@@ -179,14 +197,35 @@ export default function Room({ socket }: RoomProps) {
           </div>
 
           <div className="bg-slate-800 rounded p-4 mb-4">
-            <p className="text-sm text-slate-400 mb-2">
-              Cấu hình: {room.spyCount} Spy + {room.dânCount} Dân (Tổng cộng: {totalPlayersNeeded} người)
-            </p>
-            <p className={`text-sm font-semibold ${
-              canStartGame ? 'text-green-400' : 'text-yellow-400'
-            }`}>
-              Số người hiện tại: {currentPlayers} / {totalPlayersNeeded}
-            </p>
+            {room.wordMode === 'manual' ? (
+              <>
+                <p className="text-sm text-slate-400 mb-2">
+                  Cấu hình: {room.spyCount} Spy + {room.dânCount} Dân + 1 Host (Tổng cộng: {totalPlayersNeeded + 1} người)
+                </p>
+                <p className={`text-sm font-semibold ${
+                  canStartGame ? 'text-green-400' : 'text-yellow-400'
+                }`}>
+                  Số người hiện tại: {currentPlayers} / {totalPlayersNeeded + 1}
+                </p>
+                <p className="text-xs text-slate-500 mt-1">
+                  💡 Manual Mode: Host không tính là người chơi
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="text-sm text-slate-400 mb-2">
+                  Cấu hình: {room.spyCount} Spy + {room.dânCount} Dân (Tổng cộng: {totalPlayersNeeded} người)
+                </p>
+                <p className={`text-sm font-semibold ${
+                  canStartGame ? 'text-green-400' : 'text-yellow-400'
+                }`}>
+                  Số người hiện tại: {currentPlayers} / {totalPlayersNeeded}
+                </p>
+                <p className="text-xs text-slate-500 mt-1">
+                  💡 Random Mode: Host tính là 1 người chơi
+                </p>
+              </>
+            )}
             <p className="text-sm text-slate-400 mt-2">
               Phát từ: {room.wordMode === 'random' ? 'Random' : 'Manual'}
             </p>

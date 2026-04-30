@@ -22,6 +22,7 @@ export interface Room {
   wordMode: "manual" | "random";
   spyCount: number;
   dânCount: number;
+  discussionTime: number;
   descriptions: Map<string, string>;
   votes: Map<string, string>;
   gameResult?: {

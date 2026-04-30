@@ -66,6 +66,36 @@ export function setupSocketEvents(io: Server) {
       });
     });
 
+    // Update room config (host only)
+    socket.on("room:updateConfig", (data: { spyCount?: number; dânCount?: number; discussionTime?: number }, callback) => {
+      if (!socket.data.roomId) {
+        callback({ success: false, error: "Không tìm thấy phòng" });
+        return;
+      }
+
+      const room = roomService.getRoomById(socket.data.roomId);
+      if (!room) {
+        callback({ success: false, error: "Phòng không tồn tại" });
+        return;
+      }
+
+      if (room.hostId !== socket.data.playerId) {
+        callback({ success: false, error: "Chỉ host mới có thể cập nhật cấu hình" });
+        return;
+      }
+
+      const result = roomService.updateConfig(socket.data.roomId, data);
+
+      if (!result.success) {
+        callback({ success: false, error: result.error });
+        return;
+      }
+
+      io.to(socket.data.roomCode).emit("room:updated", serializeRoom(result.room));
+
+      callback({ success: true });
+    });
+
     // Start game
     socket.on(
       "game:start",

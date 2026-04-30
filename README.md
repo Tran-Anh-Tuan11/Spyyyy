@@ -82,5 +82,5 @@ spy-duel/
 
 ---
 
-**Tác giả**: Spy & Duel Team  
+**Tác giả**: TAT
 **Phiên bản**: 1.0.0
