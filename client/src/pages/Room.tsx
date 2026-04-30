@@ -19,22 +19,13 @@ export default function Room({ socket }: RoomProps) {
 
   const isHost = playerId === room?.hostId;
   const roomUrl = `${window.location.origin}?code=${room?.code}`;
-  
-  // Tính tổng người cần thiết:
-  // - Manual mode: Host KHÔNG tính là người chơi, chỉ là host → totalPlayers = spy + dân
-  // - Random mode: Host tính là người chơi → totalPlayers = spy + dân (host nằm trong số này)
   const totalPlayersNeeded = (room?.spyCount || 0) + (room?.dânCount || 0);
-  const currentPlayers = room?.players.length || 0;
-  
-  // Kiểm tra xem đủ người để bắt đầu
-  let canStartGame = false;
-  if (room?.wordMode === 'manual') {
-    // Manual: cần đủ số người + host (host không tính vào spy/dân)
-    canStartGame = currentPlayers > totalPlayersNeeded; // currentPlayers = spy + dân + host
-  } else {
-    // Random: host tính là người chơi
-    canStartGame = currentPlayers >= totalPlayersNeeded;
-  }
+  const currentPlayers = room
+    ? room.wordMode === 'manual'
+      ? room.players.filter((player) => player.id !== room.hostId).length
+      : room.players.length
+    : 0;
+  const canStartGame = currentPlayers >= totalPlayersNeeded;
 
   useEffect(() => {
     if (room?.code) {
@@ -179,7 +170,9 @@ export default function Room({ socket }: RoomProps) {
         </div>
 
         <div className="bg-slate-900 rounded-lg p-6">
-          <h2 className="text-2xl font-bold mb-4">👥 Người chơi ({room.players.length})</h2>
+          <h2 className="text-2xl font-bold mb-4">
+            👥 Người chơi ({currentPlayers}/{totalPlayersNeeded})
+          </h2>
 
           <div className="space-y-2 mb-6 max-h-48 overflow-y-auto">
             {room.players.map((player) => (
@@ -197,35 +190,19 @@ export default function Room({ socket }: RoomProps) {
           </div>
 
           <div className="bg-slate-800 rounded p-4 mb-4">
-            {room.wordMode === 'manual' ? (
-              <>
-                <p className="text-sm text-slate-400 mb-2">
-                  Cấu hình: {room.spyCount} Spy + {room.dânCount} Dân + 1 Host (Tổng cộng: {totalPlayersNeeded + 1} người)
-                </p>
-                <p className={`text-sm font-semibold ${
-                  canStartGame ? 'text-green-400' : 'text-yellow-400'
-                }`}>
-                  Số người hiện tại: {currentPlayers} / {totalPlayersNeeded + 1}
-                </p>
-                <p className="text-xs text-slate-500 mt-1">
-                  💡 Manual Mode: Host không tính là người chơi
-                </p>
-              </>
-            ) : (
-              <>
-                <p className="text-sm text-slate-400 mb-2">
-                  Cấu hình: {room.spyCount} Spy + {room.dânCount} Dân (Tổng cộng: {totalPlayersNeeded} người)
-                </p>
-                <p className={`text-sm font-semibold ${
-                  canStartGame ? 'text-green-400' : 'text-yellow-400'
-                }`}>
-                  Số người hiện tại: {currentPlayers} / {totalPlayersNeeded}
-                </p>
-                <p className="text-xs text-slate-500 mt-1">
-                  💡 Random Mode: Host tính là 1 người chơi
-                </p>
-              </>
-            )}
+            <p className="text-sm text-slate-400 mb-2">
+              Cấu hình: {room.spyCount} Spy + {room.dânCount} Dân (Tổng cộng: {totalPlayersNeeded} người)
+            </p>
+            <p className={`text-sm font-semibold ${
+              canStartGame ? 'text-green-400' : 'text-yellow-400'
+            }`}>
+              Số người hiện tại: {currentPlayers} / {totalPlayersNeeded}
+            </p>
+            <p className="text-xs text-slate-500 mt-1">
+              {room.wordMode === 'manual'
+                ? '💡 Manual Mode: Host không tính vào số người chơi'
+                : '💡 Random Mode: Host tính là 1 người chơi'}
+            </p>
             <p className="text-sm text-slate-400 mt-2">
               Phát từ: {room.wordMode === 'random' ? 'Random' : 'Manual'}
             </p>
@@ -339,7 +316,7 @@ export default function Room({ socket }: RoomProps) {
 
               <button
                 onClick={() => {
-                  console.log('[Room] Host bắt đầu game, players:', room.players.length, '/', totalPlayersNeeded);
+                  console.log('[Room] Host bắt đầu game, players:', currentPlayers, '/', totalPlayersNeeded);
                   handleStartGame();
                 }}
                 disabled={!canStartGame}
